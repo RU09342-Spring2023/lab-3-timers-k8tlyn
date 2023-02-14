@@ -2,9 +2,18 @@
  * Part1.c
  *
  *  Created on: Feb 11, 2023
- *      Author: Russell Trafford
+ *      Author: Kaitlyn Pounds
  *
  *  This code is a template which will change the color of the LED being blinked using the interrupt routine.
+ *
+ Upon starting, the RED LED should be blinking while the button is not pressed.
+
+When the button is pressed, the interrupt should change which LED is blinking, and change the edge direction in the edge sensitivity register.
+
+While the button is pressed the LED should stay blinking Green.
+
+When the button is released, the Green LED should turn off and the Red LED should be blinking, changing the edge direction of the edge sensitivity register.
+
  */
 
 
@@ -12,7 +21,7 @@
 
 char LED_Color = 0x01;                       // Global Variable to determine which LED should be blinking
 
-void gpioInit()
+void gpioInit();
 
 
 int main(void)
@@ -21,7 +30,7 @@ int main(void)
 
     gpioInit();
 
-
+    int LEDColor =
 
     // Disable the GPIO power-on default high-impedance mode
     // to activate previously configured port settings
@@ -35,14 +44,13 @@ int main(void)
 
     while(1)
     {
-        if (LEDColor)
+        if (LED_Color)
             P1OUT ^= BIT0;                  // P1.0 = toggle
         else
-            P6OUT &= ~BIT6;                 // Set P1.0 to 0
+            P6OUT ^= BIT6;                 // P6.6 = toggle
         __delay_cycles(100000);
     }
 }
-
 
 /*
  * gpioInit()
@@ -68,9 +76,7 @@ void gpioInit(){
       P2REN |= BIT3;                          // P2.3 pull-up register enable
       P2IES &= ~BIT3;                         // P2.3 Low --> High edge
       P2IE |= BIT3;                           // P2.3 interrupt enabled
-
 }
-
 
 
 
@@ -78,18 +84,18 @@ void gpioInit(){
 #pragma vector=PORT2_VECTOR
 __interrupt void Port_2(void)
 {
-    P2IFG &= ~BIT3;                         // Clear P1.3 IFG
+    P2IFG &= ~BIT3;                         // Clear P2.3 IFG
 
-    if ( )       // @TODO Fill in this argument within the If statement to check if the interrupt was triggered off a rising edge.
+    if (P2IN & BIT3)       // @TODO Fill in this argument within the If statement to check if the interrupt was triggered off a rising edge.
     {
         LED_Color = 0;
-        // @TODO Add code to change which edge the interrupt should be looking for next
+        P2IES |= BIT3; // @TODO Add code to change which edge the interrupt should be looking for next
     }
 
-    else if ( ) // @TODO Fill in this argument within the If statement to check if the interrupt was triggered off a falling edge.
+    else if (!(P2IN & BIT3)) // @TODO Fill in this argument within the If statement to check if the interrupt was triggered off a falling edge.
     {
         LED_Color = 1;
-        // @TODO Add code to change which edge the interrupt should be looking for next
+        P2IES &= ~BIT3;// @TODO Add code to change which edge the interrupt should be looking for next
     }
 }
 
