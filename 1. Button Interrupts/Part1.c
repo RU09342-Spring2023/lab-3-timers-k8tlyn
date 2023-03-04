@@ -30,12 +30,11 @@ int main(void)
 
     gpioInit();
 
-    int LEDColor =
+
 
     // Disable the GPIO power-on default high-impedance mode
     // to activate previously configured port settings
     PM5CTL0 &= ~LOCKLPM5;
-
 
 
     P2IFG &= ~BIT3;                         // P2.3 IFG cleared
