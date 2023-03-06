@@ -35,19 +35,11 @@ void main(){
     gpioInit();
     timerInit();                               //set how fast timer should be going
 
-
-
-
-
     // Disable the GPIO power-on default high-impedance mode
     // to activate previously configured port settings
     PM5CTL0 &= ~LOCKLPM5;
 
     __bis_SR_register(LPM3_bits | GIE);
-
-
-
-
 
 }
 

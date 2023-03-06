@@ -15,6 +15,21 @@
  *     For example, if I hold it down for 3 seconds, the LED should then blink every 3 seconds.
  *
  *     If the user presses the other button, you can then reset the system back to a default speed.
+ *
+ *
+ *
+ *     increment while button pushed
+ *     timer to blink led with period of
+ *
+ *
+ *       blinking period = CCR0 * 1/8192
+ *
+ *       blinking period = button press period
+ *
+ *       button press period = variable incremented while button is pushed
+ *
+ *
+ *
  */
 
 #include <msp430.h>
@@ -22,7 +37,11 @@
 void gpioInit();
 void timerInit();
 
-int time;
+int time = 0;           //used to keep track of how long button is pressed
+int count = 0;          //1 when button is pressed, 0 when button released
+
+
+
 
 
 void main(){
@@ -32,15 +51,13 @@ void main(){
        gpioInit();
        timerInit();                               //set how fast timer should be going
 
-
-
+    if(count) time++;
 
        // Disable the GPIO power-on default high-impedance mode
        // to activate previously configured port settings
        PM5CTL0 &= ~LOCKLPM5;
 
        __bis_SR_register(LPM3_bits | GIE);
-
 
    }
 
@@ -71,38 +88,49 @@ void gpioInit(){
 void timerInit(){
 
     TB1CCTL0 |= CCIE;                          // TBCCR0 interrupt enabled
-    TB1CCR0 = 25000;                            //interrupt happens when it hits 50000
-    TB1CTL = TBSSEL_1 | MC_1 | ID_3 | TBCLR;     // ACLK, up mode (Timer counts up to TBxCL0), input divider (/8)
+    TB1CCR0 = 7500;                        //timer counts up to this value initially and then stops
+    TB1CTL = TBSSEL_1 | MC_2 | ID_3;          // ACLK, continuous mode , input divider (/4)
 }
 
 // Port 2 interrupt service routine
 #pragma vector=PORT2_VECTOR
 __interrupt void Port_2(void)
 {
-    if(P2IN & BIT3){                     //on posedge
+    if(count){
+        count = 0;
 
+        P2IES |= BIT3;                 // P2.3 High --> Low edge
 
-        while(1){
-            time++;                         //keep track of the time the button is being pushed
+    }
 
-        }
-        //button is pressed - light is on timer is on
-        //button is released - light is off timer off
+    else{
+        count = 1;
+
+        P2IES &= ~BIT3;                 // P2.3 Low --> High edge
+
     }
 
 
     P2IFG &= ~BIT3;                         // Clear P2.3 IFG
 }
 
-
-// Timer B1 interrupt service routine
-#pragma vector = TIMER1_B0_VECTOR
-__interrupt void Timer1_B0_ISR(void)
+// Port 4 interrupt service routine
+#pragma vector=PORT4_VECTOR
+__interrupt void Port_4(void)
 {
+    if(!(P4IN & BIT1)){
+        P1OUT ^= BIT0;
+    }
+
+    P4IFG &= ~BIT1;                         // Clear P4.1 IFG
+}
+
+// Timer B0 interrupt service routine
+#pragma vector = TIMER1_B0_VECTOR
+__interrupt void Timer1_B0_ISR(void)        //blinks LED at period of button push
+{
+
     P6OUT ^= BIT6;
-    TB1CCR0 = time;
+    TB1CCR0 += time;
  }
-
-
-
 
